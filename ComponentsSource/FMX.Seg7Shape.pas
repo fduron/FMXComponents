@@ -1,5 +1,6 @@
-﻿// ***************************************************************************
-//
+// ***************************************************************************
+
+//
 // FMXComponents: Firemonkey Opensource Components Set
 //
 // Segment 7 Shape Firemonkey Componet
@@ -13,7 +14,8 @@
 //
 // ***************************************************************************
 // 2017-09-16, v0.2.0.0 :
-//    port to Rad Studio Berlin
+
+//    port to Rad Studio Berlin
 //    Change the component name to TFMXSeg7Shape
 //    remove segments and num properties storage
 
@@ -32,9 +34,11 @@ uses
   FMX.Types,
   FMX.Controls,
   FMX.Objects,
-  FMX.ComponentsCommon;
+  FMX.ComponentsCommon,
+  FMX.Graphics;
 
 type
+  TSegment = (SegA, segB, SegC, SegD, SegE, SegF, SegG);
   [ComponentPlatformsAttribute(TFMXPlatforms)]
   TFMXSeg7Shape = class(TShape)
   const
@@ -45,6 +49,7 @@ type
     { Private 宣言 }
     FNum: Byte;
     FData: Byte;
+    FFillOff: TBrush;
     procedure SetSeg_a(const Value: Boolean);
     procedure SetSeg_b(const Value: Boolean);
     procedure SetSeg_c(const Value: Boolean);
@@ -65,6 +70,7 @@ type
     { Protected 宣言 }
     procedure SetBit(idx: Integer; Value: Boolean);
     procedure Paint; override;
+    procedure FillOffChanged(Sender: TObject); virtual;
   public
     { Public 宣言 }
     constructor Create(AOwner: TComponent); override;
@@ -81,6 +87,7 @@ type
     property SEG_F: Boolean read GetSEG_F write SetSeg_f stored False;
     property SEG_G: Boolean read GetSEG_G write SetSeg_g stored False;
     property Fill;
+    property FillOff: TBrush read FFillOff write FFillOff;
     property Stroke;
     property Align;
     property Anchors;
@@ -128,6 +135,10 @@ implementation
 constructor TFMXSeg7Shape.Create(AOwner: TComponent);
 begin
   inherited;
+  Fill.Color := MakeColor(0,0,0,255);
+  Stroke.Kind := TBrushKind.None;
+  FFillOff := TBrush.Create(TBrushKind.Solid, MakeColor(0,0,0,20));
+  FFillOff.OnChanged := FillOffChanged;
   FNum := 8;
   FData := $7F;
   Height := 144;
@@ -136,7 +147,13 @@ end;
 
 destructor TFMXSeg7Shape.Destroy;
 begin
+  FFillOff.Free;
   inherited;
+end;
+
+procedure TFMXSeg7Shape.FillOffChanged(Sender: TObject);
+begin
+  Repaint;
 end;
 
 function TFMXSeg7Shape.GetSEG_A: Boolean;
@@ -253,14 +270,132 @@ end;
 
 procedure TFMXSeg7Shape.Paint;
 var
-  Polygon: TPolygon;
   cliw, clih: Single;
   h, w, aw, ah: Single;
   dw, dh: Single;
   gw, gh: Single;
+
+  procedure DrawPolygon(aSegment : TSegment; OnOff : boolean);
+  var
+    aPolygon : TPolygon;
+  begin
+    if OnOff then
+      Canvas.Fill.Assign(Fill)
+    else
+      Canvas.Fill.Assign(FillOff);
+
+    if aSegment in [segA, SegG, SegD] then
+      SetLength(aPolygon, 7)
+    else
+      SetLength(aPolygon, 5);
+
+    case aSegment of
+      segA : begin
+        aPolygon[0].X := aw;
+        aPolygon[0].Y := ah + h * 0.5;
+        aPolygon[1].X := aw + w * 0.2;
+        aPolygon[1].Y := ah;
+        aPolygon[2].X := aw + w * 0.8;
+        aPolygon[2].Y := ah;
+        aPolygon[3].X := aw + w;
+        aPolygon[3].Y := ah + h * 0.5;
+        aPolygon[4].X := aw + w * 0.8;
+        aPolygon[4].Y := ah + h;
+        aPolygon[5].X := aw + w * 0.2;
+        aPolygon[5].Y := ah + h;
+        aPolygon[6].X := aw;
+        aPolygon[6].Y := ah + h * 0.5;
+      end;
+      segB : Begin
+        aPolygon[0].X := aw + w;
+        aPolygon[0].Y := ah + h * 0.5;
+        aPolygon[1].X := aw + w * 0.8;
+        aPolygon[1].Y := ah + h;
+        aPolygon[2].X := gw + w * 0.8;
+        aPolygon[2].Y := gh;
+        aPolygon[3].X := aw + w;
+        aPolygon[3].Y := gh + h * 0.5;
+        aPolygon[4].X := aw + w;
+        aPolygon[4].Y := ah + h * 0.5;
+      End;
+      segC : begin
+        aPolygon[0].X := gw + w;
+        aPolygon[0].Y := gh + h * 0.5;
+        aPolygon[1].X := gw + w * 0.8;
+        aPolygon[1].Y := gh + h;
+        aPolygon[2].X := dw + w * 0.8;
+        aPolygon[2].Y := dh;
+        aPolygon[3].X := gw + w;
+        aPolygon[3].Y := dh + h * 0.5;
+        aPolygon[4].X := gw + w;
+        aPolygon[4].Y := gh + h * 0.5;
+      end;
+      SegD : begin
+        aPolygon[0].X := dw;
+        aPolygon[0].Y := dh + h * 0.5;
+        aPolygon[1].X := dw + w * 0.2;
+        aPolygon[1].Y := dh;
+        aPolygon[2].X := dw + w * 0.8;
+        aPolygon[2].Y := dh;
+        aPolygon[3].X := dw + w;
+        aPolygon[3].Y := dh + h * 0.5;
+        aPolygon[4].X := dw + w * 0.8;
+        aPolygon[4].Y := dh + h;
+        aPolygon[5].X := dw + w * 0.2;
+        aPolygon[5].Y := dh + h;
+        aPolygon[6].X := dw;
+        aPolygon[6].Y := dh + h * 0.5;
+      end;
+      segE : begin
+        aPolygon[0].X := gw;
+        aPolygon[0].Y := gh + h * 0.5;
+        aPolygon[1].X := gw + w * 0.2;
+        aPolygon[1].Y := gh + h;
+        aPolygon[2].X := dw + w * 0.2;
+        aPolygon[2].Y := dh;
+        aPolygon[3].X := dw;
+        aPolygon[3].Y := dh + h * 0.5;
+        aPolygon[4].X := gw;
+        aPolygon[4].Y := gh + h * 0.5;
+      end;
+      segF : begin
+        aPolygon[0].X := aw;
+        aPolygon[0].Y := ah + h * 0.5;
+        aPolygon[1].X := aw + w * 0.2;
+        aPolygon[1].Y := ah + h;
+        aPolygon[2].X := gw + w * 0.2;
+        aPolygon[2].Y := gh;
+        aPolygon[3].X := gw;
+        aPolygon[3].Y := gh + h * 0.5;
+        aPolygon[4].X := aw;
+        aPolygon[4].Y := ah + h * 0.5;
+      end;
+      SegG : begin
+        aPolygon[0].X := gw;
+        aPolygon[0].Y := gh + h * 0.5;
+        aPolygon[1].X := gw + w * 0.2;
+        aPolygon[1].Y := gh;
+        aPolygon[2].X := gw + w * 0.8;
+        aPolygon[2].Y := gh;
+        aPolygon[3].X := gw + w;
+        aPolygon[3].Y := gh + h * 0.5;
+        aPolygon[4].X := gw + w * 0.8;
+        aPolygon[4].Y := gh + h;
+        aPolygon[5].X := gw + w * 0.2;
+        aPolygon[5].Y := gh + h;
+        aPolygon[6].X := gw;
+        aPolygon[6].Y := gh + h * 0.5;
+      end;
+    end;
+
+    Canvas.FillPolygon(aPolygon, AbsoluteOpacity);
+    Canvas.DrawPolygon(aPolygon, AbsoluteOpacity);
+  end;
+
 begin
   if Visible = False then
     exit;
+
   cliw := Width - 1;
   clih := Height - 1;
 
@@ -279,136 +414,23 @@ begin
 
   try
     /// /  色線設定　///////////////////////////////////////////////
-    Canvas.Fill.Assign(Fill);
     Canvas.Stroke.Assign(Stroke);
     /// /////点設定 //////////////////////////////////////////////
-    SetLength(Polygon, 7);
-    /// ///////////// a の位置の書き込み ///////////////////////////
-    if SEG_A = True then
-    begin
-      Polygon[0].X := aw;
-      Polygon[0].Y := ah + h * 0.5;
-      Polygon[1].X := aw + w * 0.2;
-      Polygon[1].Y := ah;
-      Polygon[2].X := aw + w * 0.8;
-      Polygon[2].Y := ah;
-      Polygon[3].X := aw + w;
-      Polygon[3].Y := ah + h * 0.5;
-      Polygon[4].X := aw + w * 0.8;
-      Polygon[4].Y := ah + h;
-      Polygon[5].X := aw + w * 0.2;
-      Polygon[5].Y := ah + h;
-      Polygon[6].X := aw;
-      Polygon[6].Y := ah + h * 0.5;
-      Canvas.FillPolygon(Polygon, AbsoluteOpacity);
-      Canvas.DrawPolygon(Polygon, AbsoluteOpacity);
-    end;
-    /// ////////////// g 位置の書き込み /////////////////////////////
-    if SEG_G = True then
-    begin
-      Polygon[0].X := gw;
-      Polygon[0].Y := gh + h * 0.5;
-      Polygon[1].X := gw + w * 0.2;
-      Polygon[1].Y := gh;
-      Polygon[2].X := gw + w * 0.8;
-      Polygon[2].Y := gh;
-      Polygon[3].X := gw + w;
-      Polygon[3].Y := gh + h * 0.5;
-      Polygon[4].X := gw + w * 0.8;
-      Polygon[4].Y := gh + h;
-      Polygon[5].X := gw + w * 0.2;
-      Polygon[5].Y := gh + h;
-      Polygon[6].X := gw;
-      Polygon[6].Y := gh + h * 0.5;
-      Canvas.FillPolygon(Polygon, AbsoluteOpacity);
-      Canvas.DrawPolygon(Polygon, AbsoluteOpacity);
-    end;
-    /// ////////////// d 位置の書き込み /////////////////////////////
-    if SEG_D = True then
-    begin
-      Polygon[0].X := dw;
-      Polygon[0].Y := dh + h * 0.5;
-      Polygon[1].X := dw + w * 0.2;
-      Polygon[1].Y := dh;
-      Polygon[2].X := dw + w * 0.8;
-      Polygon[2].Y := dh;
-      Polygon[3].X := dw + w;
-      Polygon[3].Y := dh + h * 0.5;
-      Polygon[4].X := dw + w * 0.8;
-      Polygon[4].Y := dh + h;
-      Polygon[5].X := dw + w * 0.2;
-      Polygon[5].Y := dh + h;
-      Polygon[6].X := dw;
-      Polygon[6].Y := dh + h * 0.5;
-      Canvas.FillPolygon(Polygon, AbsoluteOpacity);
-      Canvas.DrawPolygon(Polygon, AbsoluteOpacity);
-    end;
 
-    SetLength(Polygon, 5);
+    /// ///////////// a の位置の書き込み ///////////////////////////
+    DrawPolygon(SegA, SEG_A);
     /// ////////////// b 位置の書き込み /////////////////////////////
-    if SEG_B = True then
-    begin
-      Polygon[0].X := aw + w;
-      Polygon[0].Y := ah + h * 0.5;
-      Polygon[1].X := aw + w * 0.8;
-      Polygon[1].Y := ah + h;
-      Polygon[2].X := gw + w * 0.8;
-      Polygon[2].Y := gh;
-      Polygon[3].X := aw + w;
-      Polygon[3].Y := gh + h * 0.5;
-      Polygon[4].X := aw + w;
-      Polygon[4].Y := ah + h * 0.5;
-      Canvas.FillPolygon(Polygon, AbsoluteOpacity);
-      Canvas.DrawPolygon(Polygon, AbsoluteOpacity);
-    end;
+    DrawPolygon(SegB, SEG_B);
     /// ////////////// c 位置の書き込み /////////////////////////////
-    if SEG_C = True then
-    begin
-      Polygon[0].X := gw + w;
-      Polygon[0].Y := gh + h * 0.5;
-      Polygon[1].X := gw + w * 0.8;
-      Polygon[1].Y := gh + h;
-      Polygon[2].X := dw + w * 0.8;
-      Polygon[2].Y := dh;
-      Polygon[3].X := gw + w;
-      Polygon[3].Y := dh + h * 0.5;
-      Polygon[4].X := gw + w;
-      Polygon[4].Y := gh + h * 0.5;
-      Canvas.FillPolygon(Polygon, AbsoluteOpacity);
-      Canvas.DrawPolygon(Polygon, AbsoluteOpacity);
-    end;
-    /// ////////////// f 位置の書き込み /////////////////////////////
-    if SEG_F = True then
-    begin
-      Polygon[0].X := aw;
-      Polygon[0].Y := ah + h * 0.5;
-      Polygon[1].X := aw + w * 0.2;
-      Polygon[1].Y := ah + h;
-      Polygon[2].X := gw + w * 0.2;
-      Polygon[2].Y := gh;
-      Polygon[3].X := gw;
-      Polygon[3].Y := gh + h * 0.5;
-      Polygon[4].X := aw;
-      Polygon[4].Y := ah + h * 0.5;
-      Canvas.FillPolygon(Polygon, AbsoluteOpacity);
-      Canvas.DrawPolygon(Polygon, AbsoluteOpacity);
-    end;
+    DrawPolygon(SegC, SEG_C);
+    /// ////////////// d 位置の書き込み /////////////////////////////
+    DrawPolygon(SegD, SEG_D);
     /// ////////////// e位置の書き込み /////////////////////////////
-    if SEG_E = True then
-    begin
-      Polygon[0].X := gw;
-      Polygon[0].Y := gh + h * 0.5;
-      Polygon[1].X := gw + w * 0.2;
-      Polygon[1].Y := gh + h;
-      Polygon[2].X := dw + w * 0.2;
-      Polygon[2].Y := dh;
-      Polygon[3].X := dw;
-      Polygon[3].Y := dh + h * 0.5;
-      Polygon[4].X := gw;
-      Polygon[4].Y := gh + h * 0.5;
-      Canvas.FillPolygon(Polygon, AbsoluteOpacity);
-      Canvas.DrawPolygon(Polygon, AbsoluteOpacity);
-    end;
+    DrawPolygon(SegE, SEG_E);
+    /// ////////////// f 位置の書き込み /////////////////////////////
+    DrawPolygon(SegF, SEG_F);
+    /// ////////////// g 位置の書き込み /////////////////////////////
+    DrawPolygon(SegG, SEG_G);
   finally
     inherited;
   end;
